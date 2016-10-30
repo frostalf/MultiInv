@@ -1,0 +1,41 @@
+name: MultiInv
+main: uk.co.tggl.pluckerpluck.multiinv.MultiInv
+version: maven-version-number
+website: http://www.tggl.co.uk
+author: Pluckerpluck
+authors: [Tux2,Frostalf]
+depend: [TuxTwoLib]
+softdepend: [DebugReport]
+description: >
+             This is a plugin to create separate inventories for each world
+
+
+commands:
+  multiinv:
+    description: MultiInv admin commands
+    usage: |
+           /<command> delete <player> - delete all inventories for player (doesn't work)
+           
+permissions:
+    multiinv.reload:
+        description: reloads the config files.
+        default: op
+        command: "/multiinv reload"
+    multiinv.import:
+        description: import flat files to mysql.
+        default: op
+        command: "/multiinv import"
+    multiinv.mcimport:
+        description: imports minecraft player files into MultiInv.
+        default: op
+        command: "/multiinv mcimport"
+    multiinv.mcexport:
+        description: exports MultiInv player files for the default world into the default world.
+        default: op
+        command: "/multiinv mcexport"
+    multiinv.exempt:
+        description: exempts a player from world inventory changes.
+        default: false
+    multiinv.enderchestexempt:
+        description: exempts a player from enderchest inventory changes.
+        default: false
