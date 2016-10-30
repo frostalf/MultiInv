@@ -19,7 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-//import com.tux2mc.debugreport.DebugReport;
+import com.tux2mc.debugreport.DebugReport;
 
 import uk.co.tggl.pluckerpluck.multiinv.command.MICommand;
 import uk.co.tggl.pluckerpluck.multiinv.inventory.PlayerRestrictionRemoverThread;
@@ -32,27 +32,27 @@ import uk.co.tggl.pluckerpluck.multiinv.util.UUIDFetcher;
  * Created by IntelliJ IDEA. User: Pluckerpluck Date: 17/12/11 Time: 11:58 To change this template use File | Settings | File Templates.
  */
 public class MultiInv extends JavaPlugin {
-
+    
     // Initialize logger (auto implements enable/disable messages to console)
     public static MILogger log;
     public int xpversion = 0;
     private MultiInvAPI api;
-
+    
     boolean importing = false;
-
+    
     private static boolean is19 = false;
-
+    
     boolean tuxtwoliblistener = false;
-
-//    public DebugReport dreport = null;
-
+    
+    public DebugReport dreport = null;
+    
     private ArrayList<String> grouplist = new ArrayList<String>();
-
+    
     static MultiInv instance;
-
+    
     // Listeners
     MIPlayerListener playerListener;
-
+    
     @Override
     public void onDisable() {
         MIYamlFiles.saveLogoutWorlds();
@@ -75,20 +75,20 @@ public class MultiInv extends JavaPlugin {
 				MIYamlFiles.con.run();
 			}
 		}
-
+	
     }
-
+    
     @Override
     public void onEnable() {
     	instance = this;
         // Initialize Logger
         log = new MILogger();
-
+        
         // Load yaml files
         MIYamlFiles.loadConfig();
         MIYamlFiles.loadGroups();
         MIYamlFiles.loadPlayerLogoutWorlds();
-
+        
         // Adding in metrics
         try {
             MetricsLite metrics = new MetricsLite(this);
@@ -96,7 +96,7 @@ public class MultiInv extends JavaPlugin {
         } catch(IOException e) {
             // Failed to submit the stats :-(
         }
-
+        
         // An easy way to set the default logging levels
         if(MIYamlFiles.config.contains("loglevel")) {
             try {
@@ -110,22 +110,22 @@ public class MultiInv extends JavaPlugin {
             // Set a sane level for logging
             log.setLogLevel(MILogger.Level.INFO);
         }
-
+        
         // Initialize listeners
         playerListener = new MIPlayerListener(this);
-
+        
         // Register required events
-
+        
         //Is it GlowStone or Spigot?
         boolean isglowstone = false;
 		File glowstoneproperties = new File("config/glowstone.yml");
 		if(glowstoneproperties.exists()) {
 			isglowstone = true;
 		}
-
+        
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(playerListener, this);
-
+        
         try {
         	Class.forName("Tux2.TuxTwoLib.InventoryChangeEvent");
         	tuxtwoliblistener = true;
@@ -133,9 +133,9 @@ public class MultiInv extends JavaPlugin {
         }catch (ClassNotFoundException e) {
         	getLogger().warning("You need a newer version of TuxTwoLib for your Minecraft version for some features to work correctly.");
         }
-
-
-
+        
+        
+        
 		Matcher mcmatch;
 		if(isglowstone) {
 			Pattern pmcversion = Pattern.compile("(\\d+)\\.(\\d+)\\.?(\\d*)");
@@ -145,7 +145,7 @@ public class MultiInv extends JavaPlugin {
 			Pattern pmcversion = Pattern.compile("(\\d+)\\.(\\d+)\\.?(\\d*)");
 			mcmatch = pmcversion.matcher(cbversionstring[1]);
 		}
-
+		
         if(mcmatch.find()) {
         try {
 			int majorversion = Integer.parseInt(mcmatch.group(1));
@@ -175,7 +175,7 @@ public class MultiInv extends JavaPlugin {
             log.severe("Unable to get server version! Inaccurate XP handling may occurr!");
             log.severe("Server Version String: " + getServer().getVersion());
         }
-
+        
         api = new MultiInvAPI(this);
         if(!MIYamlFiles.usesql) {
             File groupsfolder = new File(getDataFolder(), "Groups");
@@ -183,7 +183,7 @@ public class MultiInv extends JavaPlugin {
             	//Let's convert!
             	log.info("Older data folder detected. Converting users to UUID in the background, please wait... Players will not be able to log in until conversion is complete.");
             	getServer().getScheduler().runTaskAsynchronously(this, new Runnable() {
-
+        			
         			@Override
         			public synchronized void run() {
                     	convertToUUID();
@@ -193,31 +193,31 @@ public class MultiInv extends JavaPlugin {
         }else if(MIYamlFiles.con != null) {
             Bukkit.getScheduler().runTaskTimerAsynchronously(this, MIYamlFiles.con, 1, 1);
         }
-
+        
         getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
-
+			
 			@Override
 			public void run() {
 				MIYamlFiles.saveLogoutWorlds();
 			}
 		}, 60, 20);
         scanWorlds();
-        //loadReportPlugin();
-
+        loadReportPlugin();
+        
         //Let's start the timer that will make sure players can start doing things after the set time period.
         Bukkit.getScheduler().runTaskTimer(this, new PlayerRestrictionRemoverThread(playerListener), 20, 5);
     }
-
-/*    private void loadReportPlugin() {
+    
+    private void loadReportPlugin() {
     	if(Bukkit.getPluginManager().isPluginEnabled("DebugReport")) {
     		dreport = DebugReport.getInstance();
     	}
     }
-*/
+    
     public static boolean hasOffhandSlot() {
     	return is19;
     }
-
+    
     private synchronized void convertToUUID() {
     	setIsImporting(true);
     	ConcurrentHashMap<String, UUID> cacheduuids = new ConcurrentHashMap<String, UUID>();
@@ -259,7 +259,7 @@ public class MultiInv extends JavaPlugin {
         						try {
         							wait(100);
         						} catch (InterruptedException e1) {
-
+        							
         						}
         					}
 						} catch (Exception e) {
@@ -299,11 +299,11 @@ public class MultiInv extends JavaPlugin {
         setIsImporting(false);
     	log.info("Conversion complete!");
     }
-
+    
     public MultiInvAPI getAPI() {
         return api;
     }
-
+    
     public int[] getXP(int totalxp) {
         int level = 0;
         int leftoverexp = totalxp;
@@ -335,7 +335,7 @@ public class MultiInv extends JavaPlugin {
         }
         return new int[]{level, leftoverexp, xpneededforlevel};
     }
-
+    
     public int getTotalXP(int level, float xp) {
         int atlevel = 0;
         int totalxp = 0;
@@ -368,12 +368,12 @@ public class MultiInv extends JavaPlugin {
         totalxp = (int) (totalxp + (xp * xpneededforlevel));
         return totalxp;
     }
-
+    
     public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args) {
         MICommand.command(args, sender, this);
         return true;
     }
-
+    
     public void scanWorlds() {
     	grouplist.clear();
     	List<World> worlds = Bukkit.getServer().getWorlds();
@@ -384,30 +384,30 @@ public class MultiInv extends JavaPlugin {
     		}
     	}
     }
-
+    
     public void addWorld(World world) {
     	String group = playerListener.getGroup(world);
 		if(!grouplist.contains(group)) {
 			grouplist.add(group);
 		}
     }
-
+    
     public ArrayList<String> getAllGroups() {
     	return grouplist;
     }
-
+    
     public synchronized boolean isImporting() {
     	return importing;
     }
-
+    
     public synchronized void setIsImporting(boolean iimport) {
     	importing = iimport;
     }
-
+    
     public static MultiInv getPlugin() {
     	return instance;
     }
-
+    
     public boolean updatedTuxTwoLib() {
     	return tuxtwoliblistener;
     }
